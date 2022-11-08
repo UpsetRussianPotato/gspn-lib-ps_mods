@@ -228,15 +228,16 @@ class GSPNtools(object):
                 gspn_draw.node(place, shape='circle', label='', xlabel=place, height='0.6', width='0.6', fixedsize='true')
             else:
                 # places with more than 4 tokens cannot fit all of them inside it
-                if int(marking) < 5:
-                    lb = '<'
-                    for token_number in range(1, int(marking)+1):
-                        lb = lb + '&#9899; '
-                        if token_number % 2 == 0:
-                            lb = lb + '<br/>'
-                    lb = lb + '>'
-                else:
-                    lb = '<&#9899; x ' + str(int(marking)) + '>'
+                # if int(marking) < 5:
+                #     lb = '<'
+                #     for token_number in range(1, int(marking)+1):
+                #         lb = lb + '&#9899; '
+                #         if token_number % 2 == 0:
+                #             lb = lb + '<br/>'
+                #     lb = lb + '>'
+                # else:
+                #     lb = '<&#9899; x ' + str(int(marking)) + '>'
+                lb = '<&#9679; x ' + str(int(marking)) + '>'
 
                 gspn_draw.node(place, shape='circle', label=lb, xlabel=place, height='0.6', width='0.6', fixedsize='true')
 
