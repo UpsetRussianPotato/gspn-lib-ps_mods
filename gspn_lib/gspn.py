@@ -622,43 +622,81 @@ class GSPN(object):
 
         return None
 
-    def get_enabled_transitions(self):
+    def get_enabled_transitions(self, place_name=None):
         """
-        :return: (dict) where the keys hold the enabled transitions id and the values the rate/weight of each transition
+        param place_name: (str) place name. When this arg is passed the method returns only the
+                           enabled transitions connected to that place
+        :return: (dict) where the keys hold the enabled transitions id and the values
+                        the rate/weight of each transition
         """
+
         enabled_exp_transitions = {}
         random_switch = {}
         current_marking = self.__places.copy()
-
         # dict where the keys are transitions and the values the corresponding input places
         input_places = {}
 
-        # for each transition get all the places that have an input arc connection
-        for list_index, transition in enumerate(self.__arc_in_m.coords[1]):
-            place = self.__arc_in_m.coords[0][list_index]
-            arc_weight = self.__arc_in_m.data[list_index]
-            if transition in input_places.keys():
-                input_places[transition].append((place, arc_weight))
-            else:
-                input_places[transition] = [(place, arc_weight)]
+        if place_name:
+            place_index = self.places_to_index[place_name]
 
-        # for all transitions check the ones that are enabled
-        # i.e. the input places have at least same number of tokens as the input arc weight
-        for tr, list_places in input_places.items():
-            enabled_transition = True
-            for in_pl, in_weight in list_places:
-                in_pl_name = self.index_to_places[in_pl]
-                # if current_marking[in_pl_name] == 0:
-                if current_marking[in_pl_name] < in_weight:
-                    enabled_transition = False
-                    break
+            output_transitions = []
+            # for each transition get all the places that have an input arc connection
+            for list_index, transition in enumerate(self.__arc_in_m.coords[1]):
+                place = self.__arc_in_m.coords[0][list_index]
+                arc_weight = self.__arc_in_m.data[list_index]
 
-            if enabled_transition:
-                tr_name = self.index_to_transitions[tr]
-                if self.__transitions[tr_name][0] == 'exp':
-                    enabled_exp_transitions[tr_name] = self.__transitions[tr_name][1]
+                if place == place_index:
+                    output_transitions.append(transition)
+
+                if transition in input_places.keys():
+                    input_places[transition].append((place, arc_weight))
                 else:
-                    random_switch[tr_name] = self.__transitions[tr_name][1]
+                    input_places[transition] = [(place, arc_weight)]
+
+            # for all transitions check the ones that are enabled
+            # i.e. the input places have at least same number of tokens as the input arc weight
+            for tr, list_places in input_places.items():
+                enabled_transition = True
+                for in_pl, in_weight in list_places:
+                    in_pl_name = self.index_to_places[in_pl]
+                    # if current_marking[in_pl_name] == 0:
+                    if current_marking[in_pl_name] < in_weight:
+                        enabled_transition = False
+                        break
+
+                if enabled_transition and tr in output_transitions:
+                    tr_name = self.index_to_transitions[tr]
+                    if self.__transitions[tr_name][0] == 'exp':
+                        enabled_exp_transitions[tr_name] = self.__transitions[tr_name][1]
+                    else:
+                        random_switch[tr_name] = self.__transitions[tr_name][1]
+        else:
+            # for each transition get all the places that have an input arc connection
+            for list_index, transition in enumerate(self.__arc_in_m.coords[1]):
+                place = self.__arc_in_m.coords[0][list_index]
+                arc_weight = self.__arc_in_m.data[list_index]
+                if transition in input_places.keys():
+                    input_places[transition].append((place, arc_weight))
+                else:
+                    input_places[transition] = [(place, arc_weight)]
+
+            # for all transitions check the ones that are enabled
+            # i.e. the input places have at least same number of tokens as the input arc weight
+            for tr, list_places in input_places.items():
+                enabled_transition = True
+                for in_pl, in_weight in list_places:
+                    in_pl_name = self.index_to_places[in_pl]
+                    # if current_marking[in_pl_name] == 0:
+                    if current_marking[in_pl_name] < in_weight:
+                        enabled_transition = False
+                        break
+
+                if enabled_transition:
+                    tr_name = self.index_to_transitions[tr]
+                    if self.__transitions[tr_name][0] == 'exp':
+                        enabled_exp_transitions[tr_name] = self.__transitions[tr_name][1]
+                    else:
+                        random_switch[tr_name] = self.__transitions[tr_name][1]
 
         return enabled_exp_transitions.copy(), random_switch.copy()
 
