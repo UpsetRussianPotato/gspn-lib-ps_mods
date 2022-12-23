@@ -214,9 +214,9 @@ class GSPN(object):
         '''
 
         aux_in_list = [[], []]
-        aux_in_list[0] = list(self.__arc_in_m.coords[0])
-        aux_in_list[1] = list(self.__arc_in_m.coords[1])
-        aux_in_weights = list(self.__arc_in_m.data)
+        aux_in_list[0] = self.__arc_in_m.coords[0].tolist()
+        aux_in_list[1] = self.__arc_in_m.coords[1].tolist()
+        aux_in_weights = self.__arc_in_m.data.tolist()
         for place_in, list_transitions_in in arc_in.items():
             for arc_transition_in in list_transitions_in:
                 transition_in = arc_transition_in[0]
@@ -226,9 +226,9 @@ class GSPN(object):
                 aux_in_weights.append(arc_weight)
 
         aux_out_list = [[], []]
-        aux_out_list[0] = list(self.__arc_out_m.coords[0])
-        aux_out_list[1] = list(self.__arc_out_m.coords[1])
-        aux_out_weights = list(self.__arc_out_m.data)
+        aux_out_list[0] = self.__arc_out_m.coords[0].tolist()
+        aux_out_list[1] = self.__arc_out_m.coords[1].tolist()
+        aux_out_weights = self.__arc_out_m.data.tolist()
         for transition_out, list_places_out in arc_out.items():
             for arc_place_out in list_places_out:
                 place_out = arc_place_out[0]
@@ -238,10 +238,12 @@ class GSPN(object):
                 aux_out_weights.append(arc_weight)
 
         #  Creation of Sparse Matrix
-        self.__arc_in_m = sparse.COO(aux_in_list, aux_in_weights,
-                                     shape=(len(self.__places), len(self.__transitions)))
-        self.__arc_out_m = sparse.COO(aux_out_list, aux_out_weights,
-                                      shape=(len(self.__transitions), len(self.__places)))
+        if arc_in:
+            self.__arc_in_m = sparse.COO(aux_in_list, aux_in_weights,
+                                         shape=(len(self.__places), len(self.__transitions)))
+        if arc_out:
+            self.__arc_out_m = sparse.COO(aux_out_list, aux_out_weights,
+                                          shape=(len(self.__transitions), len(self.__places)))
 
         return self.__arc_in_m, self.__arc_out_m
 
@@ -480,40 +482,53 @@ class GSPN(object):
         '''
         place_id = self.places_to_index[place]
 
-        # removing place from arc_in
+        # remove place from places tracker
+        self.__places.pop(place)
+        self.places_to_index.pop(place)
+        self.index_to_places.pop(place_id)
+        if place in self.__sparse_marking:
+            self.__sparse_marking.pop(place)
+
+        # renormalize places index
+        largest_idx = 0
+        for pl, pl_idx in self.places_to_index.copy().items():
+            if pl_idx > largest_idx:
+                largest_idx = int(pl_idx)
+            if pl_idx > place_id:
+                self.places_to_index[pl] -= 1
+                self.index_to_places[pl_idx-1] = self.index_to_places[pl_idx]
+        # delete largest index, as we decreased all the indexes and this no longer corresponds to any placee
+        self.index_to_places.pop(largest_idx)
+
+        # removing place from arc_in and decrease place index
         places_list = self.__arc_in_m.coords[0].tolist()
         transitions_list = self.__arc_in_m.coords[1].tolist()
         arc_weight_list = self.__arc_in_m.data.tolist()
-        iterator = len(places_list) - 1
-        while iterator >= 0:
-            if places_list[iterator] == place_id:
-                del places_list[iterator]
-                del transitions_list[iterator]
-                del arc_weight_list[iterator]
-            iterator = iterator - 1
-        # creating new sparse for arc_in
-        self.__arc_in_m = sparse.COO([places_list, transitions_list], arc_weight_list)
+        for i in reversed(range(len(places_list))):
+            if places_list[i] == place_id:
+                del places_list[i]
+                del transitions_list[i]
+                del arc_weight_list[i]
+            elif places_list[i] > place_id:
+                places_list[i] -= 1
+        # create new sparse matrix for arc_in
+        self.__arc_in_m = sparse.COO([places_list, transitions_list], arc_weight_list,
+                                     shape=(len(self.__places), len(self.__transitions)))
 
-        # removing place from arc_out
+        # remove place from arc_out and decrease place index
         transitions_list = self.__arc_out_m.coords[0].tolist()
         places_list = self.__arc_out_m.coords[1].tolist()
         arc_weight_list = self.__arc_out_m.data.tolist()
-        iterator = len(places_list) - 1
-        while iterator >= 0:
-            if places_list[iterator] == place_id:
-                del transitions_list[iterator]
-                del places_list[iterator]
-                del arc_weight_list[iterator]
-            iterator = iterator - 1
-        # creating new sparse for arc_out
-        self.__arc_out_m = sparse.COO([transitions_list, places_list], arc_weight_list)
-
-        # removing place from __places
-        self.__places.pop(place)
-        self.places_to_index.pop(place)
-
-        if place in self.__sparse_marking:
-            self.__sparse_marking.pop(place)
+        for i in reversed(range(len(places_list))):
+            if places_list[i] == place_id:
+                del places_list[i]
+                del transitions_list[i]
+                del arc_weight_list[i]
+            elif places_list[i] > place_id:
+                places_list[i] -= 1
+        # create new sparse matrix for arc_out
+        self.__arc_out_m = sparse.COO([transitions_list, places_list], arc_weight_list,
+                                      shape=(len(self.__transitions), len(self.__places)))
 
         return True
 
@@ -525,39 +540,53 @@ class GSPN(object):
         '''
         transition_id = self.transitions_to_index[transition]
 
+        # remove transition from transitions tracker
+        self.__transitions.pop(transition)
+        self.transitions_to_index.pop(transition)
+        self.index_to_transitions.pop(transition_id)
+
+        # renormalize transition index
+        largest_idx = 0
+        for tr, tr_idx in self.transitions_to_index.copy().items():
+            if tr_idx > largest_idx:
+                largest_idx = int(tr_idx)
+            if tr_idx > transition_id:
+                self.transitions_to_index[tr] -= 1
+                self.index_to_transitions[tr_idx-1] = self.index_to_transitions[tr_idx]
+        # delete largest index, as we decreased all the indexes and this no longer corresponds to any transition
+        self.index_to_transitions.pop(largest_idx)
+
         # removing transition from arc_in
         places_list = self.__arc_in_m.coords[0].tolist()
         transitions_list = self.__arc_in_m.coords[1].tolist()
         arc_weight_list = self.__arc_in_m.data.tolist()
-        iterator = len(transitions_list) - 1
-        while iterator >= 0:
-            if transitions_list[iterator] == transition_id:
-                del transitions_list[iterator]
-                del places_list[iterator]
-                del arc_weight_list[iterator]
-            iterator = iterator - 1
+        for i in reversed(range(len(transitions_list))):
+            if transitions_list[i] == transition_id:
+                del transitions_list[i]
+                del places_list[i]
+                del arc_weight_list[i]
+            elif transitions_list[i] > transition_id:
+                transitions_list[i] -= 1
+
         # creating new sparse for arc_in
-        self.__arc_in_m = sparse.COO([places_list, transitions_list], arc_weight_list)
+        self.__arc_in_m = sparse.COO([places_list, transitions_list], arc_weight_list,
+                                     shape=(len(self.__places), len(self.__transitions)))
 
         # removing transition from arc_out
         transitions_list = self.__arc_out_m.coords[0].tolist()
         places_list = self.__arc_out_m.coords[1].tolist()
         arc_weight_list = self.__arc_out_m.data.tolist()
-        iterator = len(transitions_list) - 1
-        while iterator >= 0:
-            if transitions_list[iterator] == transition_id:
-                del transitions_list[iterator]
-                del places_list[iterator]
-                del arc_weight_list[iterator]
-            iterator = iterator - 1
+        for i in reversed(range(len(transitions_list))):
+            if transitions_list[i] == transition_id:
+                del transitions_list[i]
+                del places_list[i]
+                del arc_weight_list[i]
+            elif transitions_list[i] > transition_id:
+                transitions_list[i] -= 1
 
         # creating new sparse for arc_out
-        self.__arc_out_m = sparse.COO([transitions_list, places_list], arc_weight_list)
-
-        # removing transition from __transitions
-        self.__transitions.pop(transition)
-        self.transitions_to_index.pop(transition)
-        self.index_to_transitions.pop(transition_id)
+        self.__arc_out_m = sparse.COO([transitions_list, places_list], arc_weight_list,
+                                      shape=(len(self.__transitions), len(self.__places)))
 
         self.__imm_transitions_generated = False
         self.__timed_transitions_generated = False
