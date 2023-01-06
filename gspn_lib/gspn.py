@@ -445,32 +445,29 @@ class GSPN(object):
 
         if type == 'place':
             arcs_in_aux, arcs_out_aux = self.get_arcs_dict()
-            place_index = self.places_to_index[name]
 
             arcs_in = []
             for transition in arcs_out_aux.keys():
                 for arc_info in arcs_out_aux[transition]:
                     place = arc_info[0]
-                    if place == place_index:
+                    if place == name:
                         arc_weight = arc_info[1]
                         arcs_in.append((transition, arc_weight))
 
-            arcs_out = arcs_in_aux[place_index]
+            arcs_out = arcs_in_aux[name]
 
         if type == 'transition':
             arcs_in_aux, arcs_out_aux = self.get_arcs_dict()
-            transition_index = self.transitions_to_index[name]
-            print('tr index ', transition_index)
 
             arcs_in = []
             for place in arcs_in_aux.keys():
                 for arc_info in arcs_in_aux[place]:
                     transition = arc_info[0]
-                    if transition == transition_index:
+                    if transition == name:
                         arc_weight = arc_info[1]
                         arcs_in.append((place, arc_weight))
 
-            arcs_out = arcs_out_aux[transition_index]
+            arcs_out = arcs_out_aux[name]
 
         return arcs_in, arcs_out
 
