@@ -67,6 +67,10 @@ class GSPN(object):
         rate = tr_info[-1]
         return rate
 
+    def get_place_marking(self, place_name):
+        ntokens = self.__places.get(place_name)
+        return ntokens
+
     def rename_place(self, place, new_name):
         if place == new_name:
             return False

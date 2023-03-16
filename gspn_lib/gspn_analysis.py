@@ -563,10 +563,12 @@ def main():
     my_pn.add_transitions(['t1', 't2'],
                           ['exp', 'exp'],
                           [1, 1])
+    arc_out = {}
+    arc_in = {}
 
-    arc_in = {'p1': ['t1']}
-
-    arc_out = {'t1': ['p2'], 't2': ['p3']}
+    arc_in.update({'p1': [['t1', 1]]})
+    arc_out.update({'t1': [['p2', 1]]})
+    arc_out.update({'t2': [['p3', 1]]})
 
     my_pn.add_arcs(arc_in, arc_out)
 
