@@ -1147,29 +1147,29 @@ class GSPN(object):
         return lb
 
 
-if __name__ == "__main__":
-    # create a generalized stochastic petri net structure
-    my_pn = GSPN()
+# if __name__ == "__main__":
+#     # create a generalized stochastic petri net structure
+#     my_pn = GSPN()
 
-    places = my_pn.add_places(['p1', 'p2', 'p3', 'p4', 'p5'], [1, 0, 1, 0, 1])
-    trans = my_pn.add_transitions(['t1', 't2', 't3', 't4'], ['exp', 'exp', 'exp', 'exp'], [1, 1, 0.5, 0.5])
-    arc_in = {}
-    arc_in['p1'] = ['t1']
-    arc_in['p2'] = ['t2']
-    arc_in['p3'] = ['t3']
-    arc_in['p4'] = ['t4']
-    arc_in['p5'] = ['t1', 't3']
-    arc_out = {}
-    arc_out['t1'] = ['p2']
-    arc_out['t2'] = ['p5', 'p1']
-    arc_out['t3'] = ['p4']
-    arc_out['t4'] = ['p3', 'p5']
-    a, b = my_pn.add_arcs(arc_in, arc_out)
+#     places = my_pn.add_places(['p1', 'p2', 'p3', 'p4', 'p5'], [1, 0, 1, 0, 1])
+#     trans = my_pn.add_transitions(['t1', 't2', 't3', 't4'], ['exp', 'exp', 'exp', 'exp'], [1, 1, 0.5, 0.5])
+#     arc_in = {}
+#     arc_in['p1'] = ['t1']
+#     arc_in['p2'] = ['t2']
+#     arc_in['p3'] = ['t3']
+#     arc_in['p4'] = ['t4']
+#     arc_in['p5'] = ['t1', 't3']
+#     arc_out = {}
+#     arc_out['t1'] = ['p2']
+#     arc_out['t2'] = ['p5', 'p1']
+#     arc_out['t3'] = ['p4']
+#     arc_out['t4'] = ['p3', 'p5']
+#     a, b = my_pn.add_arcs(arc_in, arc_out)
 
-    places = my_pn.add_places(['p1', 'p2'], [1,1])
-    trans = my_pn.add_transitions(['t1'], ['exp'], [1])
-    arc_in = {}
-    arc_in['p1'] = ['t1']
-    arc_out = {}
-    arc_out['t1'] = ['p2']
-    a, b = my_pn.add_arcs(arc_in, arc_out)
+#     places = my_pn.add_places(['p1', 'p2'], [1,1])
+#     trans = my_pn.add_transitions(['t1'], ['exp'], [1])
+#     arc_in = {}
+#     arc_in['p1'] = ['t1']
+#     arc_out = {}
+#     arc_out['t1'] = ['p2']
+#     a, b = my_pn.add_arcs(arc_in, arc_out)
