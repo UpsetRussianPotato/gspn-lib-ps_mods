@@ -360,6 +360,25 @@ class GSPN(object):
             return self.__sparse_marking.copy()
         else:
             return self.__places.copy()
+        
+    def get_current_marking_list(self):
+        marking_list = []
+        for place, mark in self.__places.items():
+            marking_list.append(mark)
+        return marking_list
+    
+    def set_marking_list(self, mark_list):
+        place_list = list(self.__places)
+        
+        if len(mark_list) == len(place_list):
+            self.__sparse_marking = {}
+            for pl, tk in self.__places.items():
+                indexy = place_list.index(pl)
+                self.__places.update({pl:mark_list[indexy]})
+                if mark_list[indexy] > 0:
+                    self.__sparse_marking[pl] = mark_list[indexy]
+        else:
+            print("error: place number and provided marking are of different size!")
 
     def set_marking(self, places):
         self.__places = places.copy()
@@ -635,6 +654,36 @@ class GSPN(object):
                         del arc_weights_list[arc_index]
                         self.__arc_out_m = sparse.COO([transitions_list, places_list], arc_weights_list)
         return True
+    
+    def create_place_to_transition_arc(self, arc_in, arc_out, trans_name, place_name, weight=None, P2T_mode=True):
+        '''
+            Fills out arc data between a place and transition 
+        '''
+        if weight == None:
+            arcWeight = 1
+        else:
+            arcWeight = weight
+
+        if P2T_mode:
+            if (arc_in.get(place_name) != None):
+                arc_in[place_name].append([trans_name, arcWeight])
+            else:
+                arc_in[place_name] = [[trans_name, arcWeight]]
+        else:
+            if (arc_out.get(trans_name) != None):
+                arc_out[trans_name].append([place_name, arcWeight])
+            else:
+                arc_out[trans_name] = [[place_name, arcWeight]]
+        return
+
+
+    def create_enabling_arc(self, arc_in, arc_out, trans_name, place_name):
+        '''
+            Fills out enabling arc data between a place and transition 
+        '''
+        self.place_to_transition_arc(arc_in, arc_out, trans_name, place_name, None, True)
+        self.place_to_transition_arc(arc_in, arc_out, trans_name, place_name, None, False)
+        return
 
     def find_index_value(self, list1, list2, element1, element2):
         '''
