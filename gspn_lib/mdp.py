@@ -1,5 +1,4 @@
 #! /usr/bin/env python3
-import os
 from gspn_lib import gspn as pn
 from gspn_lib import gspn_tools as pn_tools
 from gspn_lib import gspn_analysis as pn_analysis

@@ -71,6 +71,10 @@ class GSPN(object):
         ntokens = self.__places.get(place_name)
         return ntokens
 
+    def set_place_marking(self, place_name, ntokens):
+        self.__places.update({place_name:ntokens})
+        return
+
     def rename_place(self, place, new_name):
         if place == new_name:
             return False
