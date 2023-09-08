@@ -376,11 +376,12 @@ class GSPN(object):
         
         if len(mark_list) == len(place_list):
             self.__sparse_marking = {}
+            indexy = 0
             for pl, tk in self.__places.items():
-                indexy = place_list.index(pl)
                 self.__places.update({pl:mark_list[indexy]})
                 if mark_list[indexy] > 0:
                     self.__sparse_marking[pl] = mark_list[indexy]
+                indexy += 1
         else:
             print("error: place number and provided marking are of different size!")
 
@@ -705,7 +706,31 @@ class GSPN(object):
 
         return None
 
-    def get_enabled_transitions(self, place_name=None):
+
+    def prep_arc_data(self):
+        input_places = {}
+        output_places = {}
+        for list_index, transition in enumerate(self.__arc_in_m.coords[1]):
+            place = self.__arc_in_m.coords[0][list_index]
+            arc_weight = self.__arc_in_m.data[list_index]
+            if transition in input_places.keys():
+                input_places[transition].append((place, arc_weight))
+            else:
+                input_places[transition] = [(place, arc_weight)]
+
+        for list_index, transition in enumerate(self.__arc_out_m.coords[0]):
+            place = self.__arc_out_m.coords[1][list_index]
+            #place = self.index_to_places[place]
+            arc_weight = self.__arc_out_m.data[list_index]
+            if transition in output_places.keys():
+                output_places[transition].append((place, arc_weight))
+            else:
+                output_places[transition] = [(place, arc_weight)]
+        self.input_places = input_places
+        self.output_places = output_places
+
+
+    def get_enabled_transitions(self, place_name=None, w_prep=False):
         """
         param place_name: (str) place name. When this arg is passed the method returns only the
                            enabled transitions connected to that place
@@ -754,14 +779,17 @@ class GSPN(object):
                     else:
                         random_switch[tr_name] = self.__transitions[tr_name][1]
         else:
-            # for each transition get all the places that have an input arc connection
-            for list_index, transition in enumerate(self.__arc_in_m.coords[1]):
-                place = self.__arc_in_m.coords[0][list_index]
-                arc_weight = self.__arc_in_m.data[list_index]
-                if transition in input_places.keys():
-                    input_places[transition].append((place, arc_weight))
-                else:
-                    input_places[transition] = [(place, arc_weight)]
+            if not(w_prep):
+                # for each transition get all the places that have an input arc connection
+                for list_index, transition in enumerate(self.__arc_in_m.coords[1]):
+                    place = self.__arc_in_m.coords[0][list_index]
+                    arc_weight = self.__arc_in_m.data[list_index]
+                    if transition in input_places.keys():
+                        input_places[transition].append((place, arc_weight))
+                    else:
+                        input_places[transition] = [(place, arc_weight)]
+            else:
+                input_places = self.input_places
 
             # for all transitions check the ones that are enabled
             # i.e. the input places have at least same number of tokens as the input arc weight
@@ -783,7 +811,7 @@ class GSPN(object):
 
         return enabled_exp_transitions.copy(), random_switch.copy()
 
-    def fire_transition(self, transition):
+    def fire_transition(self, transition, w_prep=False):
         '''
         Removes 1 token from all input places and adds 1 token to all the output places of the given transition.
         :param transition: (str) name of the transition to be fired.
@@ -795,23 +823,37 @@ class GSPN(object):
         output_tokens = []
         transition_index = self.transitions_to_index[transition]
 
-        # get a list with all the input places of the given transition
-        for list_index, transition in enumerate(self.__arc_in_m.coords[1]):
-            if transition == transition_index:
-                place = self.__arc_in_m.coords[0][list_index]
-                place = self.index_to_places[place]
-                tokens = self.__arc_in_m.data[list_index]
-                input_places.append(place)
-                input_tokens.append(tokens)
+        if not(w_prep):
+            # get a list with all the input places of the given transition
+            for list_index, transition in enumerate(self.__arc_in_m.coords[1]):
+                if transition == transition_index:
+                    place = self.__arc_in_m.coords[0][list_index]
+                    place = self.index_to_places[place]
+                    tokens = self.__arc_in_m.data[list_index]
+                    input_places.append(place)
+                    input_tokens.append(tokens)
+        else:
+            data = self.input_places.get(transition_index)
+            for data_element in data:
+                place_name = self.index_to_places[data_element[0]]
+                input_places.append(place_name)
+                input_tokens.append(data_element[1])
 
-        # get a list with all the output places of the given transition
-        for list_index, transition in enumerate(self.__arc_out_m.coords[0]):
-            if transition == transition_index:
-                place = self.__arc_out_m.coords[1][list_index]
-                place = self.index_to_places[place]
-                tokens = self.__arc_out_m.data[list_index]
-                output_places.append(place)
-                output_tokens.append(tokens)
+        if not(w_prep):
+            # get a list with all the output places of the given transition
+            for list_index, transition in enumerate(self.__arc_out_m.coords[0]):
+                if transition == transition_index:
+                    place = self.__arc_out_m.coords[1][list_index]
+                    place = self.index_to_places[place]
+                    tokens = self.__arc_out_m.data[list_index]
+                    output_places.append(place)
+                    output_tokens.append(tokens)
+        else:
+            data = self.output_places.get(transition_index)
+            for data_element in data:
+                place_name = self.index_to_places[data_element[0]]
+                output_places.append(place_name)
+                output_tokens.append(data_element[1])
 
         # remove tokens from input places
         self.remove_tokens(input_places, input_tokens)
