@@ -234,11 +234,12 @@ class MDP(object):
             # checks if the new marking is unbounded
             unbounded_state = True
             marking = state[0]
+            indexy = 0
             for place_mark in marking:
-                indexy = marking.index(place_mark)
                 eval_mark = eval_marking[indexy]
                 if  eval_mark <= place_mark:
                     unbounded_state = False
+                indexy += 1
             if unbounded_state:
                 print("erro: unbounded states...")
                 exit()
@@ -546,12 +547,6 @@ def mdp_example():
     # mdp.value_iteration()
     # mdp.get_policy()
     mdp.draw_mdp()
-
-    #absorbing state, decision state, probabilistic state
-    #A* and Djistra assume actions are purely deterministic!
-    #heuristic search algorithm
-    #objective function - specifications beyond the average value
-    #augmented state space - consider time passed in the current decision process
 
 
 
